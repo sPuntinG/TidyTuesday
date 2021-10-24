@@ -133,7 +133,6 @@ stacked <- ggplot(data = by_kingdom, aes(fill = kingdom, y = spp_nr, x = reorder
     panel.background = element_rect(fill = "transparent", color = NA),
     plot.background = element_rect(fill = "black", color = NA),
     plot.title = element_text(
-      # face = "bold",
       size = 17,
       color = "grey78",
       hjust = 0.2, 
