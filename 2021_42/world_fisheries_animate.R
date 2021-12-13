@@ -20,27 +20,17 @@ pacman::p_load(
 
 # Import data  --------------------------------------------------------------------
 
-# # Import with {tidytuesdayR}
-# # (avoid having to download the heavy data on your machine)
-# tt_data <- tt_load(2021, week = 42)
-# 
-# # list of 7: I pick 1
-# # I'm curious about seafood consumption
-# data <- tt_data$`fish-and-seafood-consumption-per-capita`
-# 
-# rm(tt_data)
+# Import with {tidytuesdayR}
+# (avoid having to download the heavy data on your machine)
+tt_data <- tt_load(2021, week = 42)
+
+# list of 7: I pick 1
+# I'm curious about seafood consumption
+data <- tt_data$`fish-and-seafood-consumption-per-capita`
+
+rm(tt_data)
 
 
-# # Issue with querying GitHub ...
-# tuesdata <- tidytuesdayR::tt_load('2021-10-12')
-# 
-# data <- tuesdata$`fish-and-seafood-consumption-per-capita`
-# 
-# rm(tuesdata)
-# 
-# write_csv(data, "percapita.csv")
-
-data <- read_csv("percapita.csv", col_names = T)
 
 # Adjust stuff -----------------------------------------------------------
 
@@ -85,32 +75,6 @@ toplot <- toplot %>%
 toplot <- st_as_sf(x = toplot, sf_column_name = "geometry")
 
 class(toplot) # :)
-
-
-
-# # # Try {gganimate} with simpler plot -----------------------------------------------
-# 
-# # Pick 3 big countries just to try out viz with a lighter data set
-# bigones <- c("China", "Russia", "Australia")
-# 
-# bigs <- toplot %>% 
-#   filter(Entity %in% bigones)
-# 
-# 
-# 
-# # static
-# static <- ggplot() + 
-#   geom_sf(data = wrld_ne, show.legend = FALSE) +
-#   geom_sf(data = bigs, aes(fill = kg_capita_year)) +
-#   coord_sf(crs = "+proj=robin") + # robinson
-#   labs(title = "Prova one due tre") 
-# 
-# # now animate it
-# anim <- static +
-#   transition_states(Year, transition_length = 100, state_length = 1, wrap = T) + # transition_manual
-#   labs(title = "Year {closest_state}") # {nlayers} {frame_along}
-# anim
-# # WOOOOOOOORKS!!!
 
 
 
@@ -185,7 +149,7 @@ animate(a, nframes = 200,
         res = 100, units = "cm", width = 30.5, height = 17.9,
         renderer = gifski_renderer("seafood.gif"))
 
-# Just upload to Git!
+
 
 
 
