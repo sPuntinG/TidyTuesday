@@ -94,14 +94,6 @@ eu27 <- c(
   "Slovenia", "Spain", "Sweden"
   )
 # Countries in latitudinal order (N to S)
-# eu27_lat <- c(
-#   "Sweden", "Finland", "Denmark", "Estonia", "Latvia", "Lithuania",
-#   "Ireland", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czechia",
-#   "Germany", "Greece", "Hungary", "Italy", "Luxembourg", "Malta", 
-#   "Netherlands", "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", 
-#   "Spain", "France", "Austria"
-# )
-
 eu27_lat <- c("Finland", "Sweden", "Estonia", "Latvia", "Lithuania", "Denmark", 
               "Germany", "Netherlands", "Belgium", "Luxembourg", "France", 
               "Austria", "Czechia", "Slovakia", "Slovenia", "Italy", "Malta",  # "Czech Republic"
@@ -119,7 +111,6 @@ data1_long_eu$country %>% n_distinct() # 27 correct (names matched)
 data1_long_eu$country %>% class() # "character"
 
 # Make factor, then create var for ordering (not order in levels, in case I want use a different way of arranging them later)
-
 # Create a tibble
 eu27_lat #<- c("Finland", "Sweden", "Estonia", "Latvia", "Lithuania", "Denmark", "Germany", "Netherlands", "Belgium", "Luxembourg", "France", "Austria", "Czechia", "Slovakia", "Slovenia", "Italy", "Malta", "Spain", "Portugal", "Croatia", "Hungary", "Poland", "Romania", "Bulgaria", "Greece", "Cyprus", "Ireland")
 latitude <- c(61.3, 64.09, 59.43, 57.09, 55.19, 56.06, 52.52, 52.29, 50.5, 49.39, 46.01, 47.08, 49.49, 48.12, 46.05, 41.54, 35.55, 40.28, 39.45, 45.17, 47.2, 52.11, 45.3, 42.21, 38.09, 35.11, 53.2)
@@ -132,12 +123,7 @@ lat <- lat %>% arrange(desc(latitude)) %>%
 
 data1_long_eulat <- left_join(data1_long_eu, lat, by = join_by(country))
 
-
-# # Replace NA with 0 in TWh (avoid problems downstream with geom_ggstream)
-# data1_long_eu$TWh <- ifelse(is.na(data1_long_eu$TWh), 0, data1_long_eu$TWh)
-
-
-# Remove aggregated measures (counted twice) = keep only individual sources
+# Remove aggregated measures = keep only individual sources (so they're not counted twice)
 individual_esources <- c("Biofuel", "Coal", "Gas", "Hydro", "Nuclear", "Oil", "Solar", "Wind")
 
 indivesources <- data1_long_eulat %>% 
@@ -146,19 +132,9 @@ indivesources <- data1_long_eulat %>%
 # Specify order of levels for source
 indivesources$esource <- factor(indivesources$esource, levels = c("Wind", "Hydro", "Biofuel", "Solar", "Nuclear", "Gas", "Coal", "Oil"))
 
-## Quick check: which year to start? -------------------
+## Which years to keep? -------------------
 
-# Plot of a few countries to visually check
-to_keep <- c("Italy", "Belgium", "United States")
-
-# indivesources %>% 
-#   filter(country %in% to_keep) %>% 
-#   ggplot(data = ., 
-#          mapping = aes(x = year, y = TWh)) +
-#   geom_point(aes(color = country)) +
-#   facet_wrap(~esource)
-
-# Get number out: year 1985
+# Oldest record
 year1 <- indivesources %>% 
   filter(!is.na(TWh)) %>% 
   pull(year) %>% min() # 1965
@@ -174,6 +150,23 @@ indivesources <- indivesources %>%
 
 
 rm(list = setdiff(ls(), c("indivesources", "year1", "yearn"))) # c("all_data", "asv_count_taxa")
+
+
+# Replace all 0.000 to NA so it can be handled by ggstream ----------------
+indivesources <- indivesources %>%
+  mutate(TWh = if_else(TWh == 0, NA, TWh))
+
+# Normalize by population -> per-capita kWh ---------------------
+
+# Check if population info is missing anywhere
+indivesources %>% 
+  filter(is.na(population)) #%>% view() # all good :)
+
+
+indivesources <- indivesources %>% 
+  mutate(kWh_percapita = (TWh * 10^6)/population) #%>% view()
+  
+
 
 
 
@@ -200,40 +193,19 @@ loadfonts(device = "win")
 windowsFonts()
 
 
-# # Small plot to try
-# ggplot(data = ita,
-#        aes(x = year, y = TWh)) +
-#   geom_point(aes(color = esource)) +
-#   labs(title = "Italian stuff") +
-#   theme(
-#     text=element_text(family="Roboto"),
-#     plot.title = element_text(family = "Roboto Black", face = "bold") # "Universe-Condensed" "Franklin Gothic Book"
-#   )
-
-
 # {ggstream} of primary energy consumption by year - for one country at a time ----------------------
 
 ## Install pkg -----------------
 # install.packages("ggstream")
 library(ggstream)
-library(ggtext)
-
-# Try on Italy data
-ita <- indivesources %>% filter(country == "Italy")
-to_keep <- c("Italy", "Belgium", "Germany", "France", "Austria", "Spain", "Portugal", "Netherlands")
-to_keep <- c("Austria", "Portugal", "Italy")
+library(ggtext) # for element_markdown()
 
 color_text <- "#F7F7F0" # "#B9D0DA"
 color_bg <- "#176384"
 
-# indivesources$esource <- as.character(indivesources$esource)
-
 indivesources %>% 
-  # filter(country %in% to_keep) %>%
-  # filter(country == "Portugal") %>%
-  # filter(country == "Italy") %>%
-  mutate(TWh = if_else(TWh == 0, NA, TWh)) %>% # This seems to be necessary to avoid the error message BT still leaves the plot blank ... 
-  ggplot(., aes(x = year, y = TWh, fill = esource)) +
+  # filter(country == "Italy") %>% 
+  ggplot(., aes(x = year, y = kWh_percapita, fill = esource)) + # y = TWh
   # ggstream::geom_stream(
   #   geom = "contour",
   #   color = color_text,
@@ -251,7 +223,7 @@ indivesources %>%
   scale_x_continuous(limits = c(year1, yearn), 
                      breaks = seq(1960, 2025, 10), 
                      expand = c(0.05, 0)) +
-  geom_hline(yintercept = c(-1000, -500, 0, 500, 1000), linetype = "dashed", color = color_bg) +
+  # geom_hline(yintercept = c(-100, 0, 100), linetype = "dashed", color = color_bg) +
   labs(title = "Where does our energy come from?",
        subtitle = "Overview of the evolution of energy sources in Europe from 1965 to 2021.\n
 Data shown as primary energy consumption from the different sources, measured in terawatt-hour or **TWh**.<br>
@@ -300,9 +272,18 @@ and energy that is lost when raw resources are transformed into a usable form.",
   )
 
 
+# TO DO:
+# o Remove Malta (no data)
+# o write that data for Malta is missing
+# o Make country labels smaller
+# o make year smaller
+# o Subtitle: kWh/year per person
+# o say that it is ordered N-S
+# o add again dash lines: v or h?
+
 
 ## Export .PNG -----------------------------------
-ggsave("./EUEnergySource.png",
+ggsave("./EU27EnergySource.png",
        dpi = 330,
        units = "cm", 
        width = 21, height = 29.7) # A4 format 21 x 29.7
