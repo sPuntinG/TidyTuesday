@@ -42,5 +42,6 @@ vignettes/*.pdf
 # ** = any number of directories
 # final / = ignore entire directory (without it will ignore files and folders with that name)
 **/old/
+**/ignore/
 
 

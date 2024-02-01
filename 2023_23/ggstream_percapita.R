@@ -1,3 +1,7 @@
+
+#------------- R version 4.3.2 (2023-10-31 ucrt) --------------------
+
+
 library(tidyverse)
 library(here)
 
@@ -14,26 +18,6 @@ owid_energy <- read_csv("./owid_energy.csv")
 
 
 # Definitions ========================================
-
-# Watt-hour -----------------------------------
-# 
-# A watt-hour is the energy delivered by one watt of power for one hour. 
-# Since one watt is equivalent to one Joule per second, a watt-hour is equivalent to 3600 Joules of energy.
-# 
-# Metric prefixes are used for multiples of the unit, usually:
-# - kilowatt-hours (kWh), or a thousand watt-hours.
-# - Megawatt-hours (MWh), or a million watt-hours.
-# - Gigawatt-hours (GWh), or a billion watt-hours.
-# - Terawatt-hours (TWh), or a trillion watt-hours.
-
-# Primary energy -----------------------------------
-# 
-# Primary energy is the energy available as resources – such as the fuels burnt 
-# in power plants – before it has been transformed. This relates to the coal before 
-# it has been burned, the uranium, or the barrels of oil.
-# Primary energy includes energy that the end user needs, in the form of electricity, 
-# transport and heating, plus inefficiencies and energy that is lost when 
-# raw resources are transformed into a usable form.
 
 # Substitution method ----------------------
 # 
@@ -78,12 +62,7 @@ data1_long <- data1_long %>%
     esource = str_to_title(esource)) #%>% view()
 
 
-# # Keep only data about actual countries (not aggregations)
-# data1_long_eu <- data1_long %>% 
-#   drop_na(iso_code)
-#   # filter(!is.na(iso_code))
-
-# Keep only EU27 countries 
+# Keep only EU27 countries -------------------------
 
 # Countries in alphabetic order
 eu27 <- c(
@@ -204,7 +183,7 @@ color_text <- "#F7F7F0" # "#B9D0DA"
 color_bg <- "#176384"
 
 indivesources %>% 
-  # filter(country == "Italy") %>% 
+  # filter(country != "Malta") %>%
   ggplot(., aes(x = year, y = kWh_percapita, fill = esource)) + # y = TWh
   # ggstream::geom_stream(
   #   geom = "contour",
@@ -221,17 +200,16 @@ indivesources %>%
   )  +
   scale_fill_manual(values = palette_energy) +
   scale_x_continuous(limits = c(year1, yearn), 
-                     breaks = seq(1960, 2025, 10), 
+                     breaks = seq(1980, 2020, 20), 
                      expand = c(0.05, 0)) +
-  # geom_hline(yintercept = c(-100, 0, 100), linetype = "dashed", color = color_bg) +
+  scale_y_continuous(breaks = c(-30, 0, 30), labels = c("-30" = "30", "0" = "0", "30" = "30")) +
+  geom_hline(yintercept = c(-30, 0, 30), linetype = "dashed", color = color_bg) +
+  # geom_vline(xintercept = c(1970, 2000, 2015), color = color_bg) + # linetype = "dashed",
   labs(title = "Where does our energy come from?",
-       subtitle = "Overview of the evolution of energy sources in Europe from 1965 to 2021.\n
-Data shown as primary energy consumption from the different sources, measured in terawatt-hour or **TWh**.<br>
-A TWh is equivalent to a million (1'000'000) kilowatt-hour (kWh is the unit of your electrcity bill).\n
-As per Our World in Data definition, primary energy is the energy available as resources–such as the fuels burnt <br>
-in power plants–before it has been transformed. This relates to the coal before it has been burned, the uranium, or the barrels of oil.<br>
-Primary energy includes energy that the end user needs, in the form of electricity,transport and heating, plus inefficiencies<br>
-and energy that is lost when raw resources are transformed into a usable form.",
+       subtitle = "Overview of the evolution of energy consumption as **kWh per person per year** in Europe (EU27) from **1965** to **2021**. Countries are ordered by latitude (data not available for Malta).\n
+Data shown as primary energy consumption from the different sources. As per Our World in Data definition, primary energy is the energy available as resources–such as the fuels burnt in power plants–before it has been<br>
+transformed. This relates to the coal before it has been burned, the uranium, or the barrels of oil. Primary energy includes energy that the end user needs, in the form of electricity, transport and heating, plus<br>
+inefficiencies and energy that is lost when raw resources are transformed into a usable form.",
        caption = "Visualization by Giulia Puntin  •  Data by Our World in Data  •  TidyTuesday 2023 w23") +
   theme(
     text = element_text(family = "Roboto"),
@@ -248,7 +226,7 @@ and energy that is lost when raw resources are transformed into a usable form.",
     axis.title = element_blank(),
     # axis.title.x = element_blank(),
     # axis.title.y = element_text(colour = color_text, size = 13, face = "bold", angle = 0, vjust = 0.5),
-    axis.text = element_text(colour = color_text),
+    axis.text = element_text(colour = color_text, size = 7),
     legend.title = element_blank(),
     legend.background = element_rect(fill = color_bg, color = NA), # colorspace::lighten(color_bg, .05, space = "HLS")
     legend.margin = margin(rep(10,4)),
@@ -256,53 +234,27 @@ and energy that is lost when raw resources are transformed into a usable form.",
     legend.position = "bottom",
     legend.text = element_text(colour = color_text),
     legend.key = element_rect(colour = NA),
-    legend.key.height = unit(0.25, "cm"),
+    legend.key.height = unit(0.15, "cm"), # 0.25
     legend.key.width = unit(0.5, "cm"),
     plot.margin = margin(rep(20, 4)),
-    strip.text = element_text(colour = color_text, family = "Roboto", size = 12),
+    strip.text = element_text(colour = color_text, family = "Roboto", size = 10),
     strip.background = element_rect(colour = NA, fill = NA)
   ) +
   facet_wrap(
     ~fct_reorder(country, latitude_order), # country,
     # scales = "free_y",
-    ncol = 3
+    ncol = 9
     ) +
   guides(
     fill = guide_legend(nrow = 1, byrow = F)
   )
 
 
-# TO DO:
-# o Remove Malta (no data)
-# o write that data for Malta is missing
-# o Make country labels smaller
-# o make year smaller
-# o Subtitle: kWh/year per person
-# o say that it is ordered N-S
-# o add again dash lines: v or h?
-
 
 ## Export .PNG -----------------------------------
-ggsave("./EU27EnergySource.png",
+ggsave("./EU27EnergySourcePC.png",
        dpi = 330,
        units = "cm", 
-       width = 21, height = 29.7) # A4 format 21 x 29.7
-
-
-
-
-# NOTE: 
-# 1. Would  be interesting to normalize by population (cons_per_capita)
-#    also try with *_share_elec
-# 2. Try with patchwork instead ...
-# 3. Make interactive one for Shiny app with {streamgraph}?
-  
-
-
-
-
-
-
-
+       width = 29.7, height = 17) # A4 format 21 x 29.7
 
 
