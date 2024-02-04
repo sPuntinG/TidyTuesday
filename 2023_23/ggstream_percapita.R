@@ -203,7 +203,7 @@ indivesources %>%
                      breaks = seq(1980, 2020, 20), 
                      expand = c(0.05, 0)) +
   scale_y_continuous(breaks = c(-30, 0, 30), labels = c("-30" = "30", "0" = "0", "30" = "30")) +
-  geom_hline(yintercept = c(-30, 0, 30), linetype = "dashed", color = color_bg) +
+  geom_hline(yintercept = c(-30, 0, 30), linetype = "dotted", color = color_bg) +
   # geom_vline(xintercept = c(1970, 2000, 2015), color = color_bg) + # linetype = "dashed",
   labs(title = "Where does our energy come from?",
        subtitle = "Overview of the evolution of energy consumption as **kWh per person per year** in Europe (EU27) from **1965** to **2021**. Countries are ordered by latitude (data not available for Malta).\n

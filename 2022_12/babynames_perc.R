@@ -16,39 +16,29 @@ library(here)
 
 babynames <- read_csv("./babynames.csv")
 
-# What I need to do is:
-# 1. make vector with names and vector with right keys
-# 2. write function (done above)
-# 3. loop function over list (vectors)
-# 4. make a tibble of this (names, right_letters)
-# 5. mutate() to calculate tot nr of letter (nchar()) and the nchar - right_letters = left_letters
-# 6. Calculate ratio : right/left 
-# 7. Calculate predominance: ratio >1 = right (ration <1 = left; == = center)
-# 8. figure out how to plot
 
-
-# Right and left keys
-leftk <- c("Q", "W", "E", "R", "T", "A", "S", "D", "F", "G", "Z", "X", "C", "V", "B")
-rightk1 <- c("Y", "U", "I", "O", "P", "H", "J", "K", "L", "N", "M")
-rightk2 <- c("Y", "U", "I", "O", "P", "H", "J", "K", "L", "N", "M", "B") # includes B
+# # Right and left keys
+# leftk <- c("Q", "W", "E", "R", "T", "A", "S", "D", "F", "G", "Z", "X", "C", "V", "B")
+# rightk1 <- c("Y", "U", "I", "O", "P", "H", "J", "K", "L", "N", "M")
+# rightk2 <- c("Y", "U", "I", "O", "P", "H", "J", "K", "L", "N", "M", "B") # includes B
 
 babynames$name %>% unique() %>% n_distinct() # 97'310 (!!!)
 names10 <- babynames$name %>% unique() %>% .[1:10] # small set for now as it's a huge data set ... !
 
 
-# Count how many letters in a name are from the right hand keys
-# str_count() works on single word
-stringr::str_count(names10[1], fixed(rightk1, ignore_case = T)) # 1 0 0 0 0 0 0 0 0 0 1   this can simply be summed up with sum() = 2
-stringr::str_count(names10[1], fixed(rightk1, ignore_case = T)) %>% sum() # 2 which is what I need in the end
+# Count right key letters in each name ---------------------------------
 
-# But does not work on vectors
-stringr::str_count(names10[1:2], fixed(rightk1, ignore_case = T)) # Error in `stringr::str_count()`:
-                                                                 # ! Can't recycle `string` (size 2) to match `pattern` (size 11).
+# # str_count() works on single word
+# stringr::str_count(names10[1], fixed(rightk1, ignore_case = T)) # 1 0 0 0 0 0 0 0 0 0 1   this can simply be summed up with sum() = 2
+# stringr::str_count(names10[1], fixed(rightk1, ignore_case = T)) %>% sum() # 2 which is what I need in the end
+# 
+# # But does not work on vectors
+# stringr::str_count(names10[1:2], fixed(rightk1, ignore_case = T)) # Error in `stringr::str_count()`:
+#                                                                  # ! Can't recycle `string` (size 2) to match `pattern` (size 11).
 
 # Make function to iterate
 count_right1 <- function(x) {
   rightk1 <- c("Y", "U", "I", "O", "P", "H", "J", "K", "L", "N", "M")
-  # rightk <- paste(rightk, collapse = '|')
   a <- stringr::str_count(x, fixed(rightk1, ignore_case = T))
   a <- sum(a)
   return(a)
@@ -63,29 +53,29 @@ count_right2 <- function(x) {
 }
 
 count_right1("mario") # 3
-count_right1(names10)# as expected doesn't work on vectorized argument
-
-# Use map_dbl to loop so that the output is a numeric vector 
-map_dbl(names10, count_right1) 
-
-tibble10 <- tibble(name = names10, 
-                   tot_letters = nchar(name),
-                   right_letters = map_dbl(names10, count_right1),
-                   left_letters = tot_letters - right_letters,
-                   ratio = right_letters/left_letters,
-                   predominance = case_when(
-                     ratio == 1 ~ "none",
-                     ratio > 1 ~ "right",
-                     ratio < 1 ~ "left"
-                     )
-                   )
+# count_right1(names10) # as expected doesn't work on vectorized argument
 
 
-# Now repeat with whole data set and join table and plot ...
+# Use map_dbl to loop count right function over vector of names -----------------------
+
+# map_dbl(names10, count_right1) # so that the output is a numeric vector 
+# 
+# tibble10 <- tibble(name = names10, 
+#                    tot_letters = nchar(name),
+#                    right_letters = map_dbl(names10, count_right1),
+#                    left_letters = tot_letters - right_letters,
+#                    ratio = right_letters/left_letters,
+#                    predominance = case_when(
+#                      ratio == 1 ~ "none",
+#                      ratio > 1 ~ "right",
+#                      ratio < 1 ~ "left"
+#                      )
+#                    )
+
+
+# Apply to full list of names 
 
 all_names <- babynames$name %>% unique()
-
-# babynames_cr <- map_dbl(all_names, count_right)
 
 tibble_all <- tibble(name = all_names, 
                      tot_letters = nchar(name),
@@ -130,7 +120,124 @@ babynames_rl <- left_join(babynames, tibble_all, by = "name")
 "#FFDEF9"
 
 
-# Plot -------------------------------------------
+
+# Plot: mean % of right vs left key letters in baby names -----------------------------
+
+# Now plot average percentage of right key letters in names (per year)
+
+babynames_rl_long <- babynames_rl %>%
+  group_by(year) %>% 
+  summarise(method1_mean = mean(perc_right1),
+            method1_median = median(perc_right1),
+            method1_sd = sd(perc_right1),
+            method2_mean = mean(perc_right2),
+            method2_median = median(perc_right2),
+            method2_sd = sd(perc_right2)) %>% 
+  pivot_longer(
+    cols = -year,
+    values_to = "value",
+    names_to = "percent_summary_stat"
+  ) %>% 
+  mutate(method = str_extract(percent_summary_stat, "[:digit:]")) %>% 
+  mutate(percent_stat = str_extract(percent_summary_stat, "[:alpha:]{1,6}$"))
+
+
+plot <- babynames_rl %>%
+  group_by(year) %>% 
+  summarise(perc_r1 = mean(perc_right1),
+            perc_r2 = mean(perc_right2)) %>% 
+  ggplot(., aes(x = year, y = perc_r2)) +
+  geom_area(fill = "#B31942") +
+  geom_line(color = "white", linewidth = 1) +
+  scale_y_continuous(expand = c(0,0), 
+                     breaks = c(40, 50),
+                     labels = function(x) paste0(x, " %")) + 
+  scale_x_continuous(expand = c(0,0),
+                     breaks = seq(1890, 2010, 20)) +
+  # scale_y_continuous(limits = c(0, 100))
+  coord_cartesian(ylim = c(35, 70)) 
+  # scale_y_continuous(limits = c(40, 60)) +
+  # coord_cartesian(ylim = c(43, 53)) # sensationalist plot
+  # labs(
+  #     title = "The QWERTY effect on USA babynames?",
+  #   subtitle = "Percentage of baby names dominated by right-hand keys (red) and left-hand keys (blue) per year of birth"
+  # )
+
+plot
+
+plot +
+  geom_hline(yintercept = c(40, 45, 50, 55), color = "white", linetype = "dashed", alpha = 0.3) +
+  # geom_vline(xintercept = 1990, color = "white", linetype = "solid") +
+  annotate("text", 
+           x = 1890, y = 68, 
+           hjust = 0,
+           color = "white",
+           size = 3,
+           label = "The QWERTY effect: does technology influence how Americans chose baby names?") +
+  annotate("text", 
+           x = 1890, y = 65, 
+           hjust = 0,
+           color = "white",
+           size = 2,
+           label = "Percentage of baby names dominated by right-hand keys (red) and left-hand keys (blue) per year of birth") +
+  theme(
+    plot.title = element_text(vjust = -20, hjust = 0, colour = "white"),
+    plot.subtitle = element_text(vjust = -20, hjust = 0, colour = "white"),
+    panel.background = element_rect(fill = "#0A3161", color = NA),
+    plot.margin = margin(rep(1, 4)),
+    # plot.background = element_blank(), # element_rect(fill = color_bg, color = NA)
+    panel.grid.major = element_blank(), #element_line(colour = "#C8EFE4", size = 0.1), # linetype = "dashed",
+    panel.grid.minor = element_blank(),
+    axis.ticks = element_blank(),
+    axis.title = element_blank(),
+    # axis.text.y = element_text(margin = margin(l = -40)) # colour = "white", 
+    axis.text.y = element_text(colour = "white",
+                               vjust = -1,
+                               margin = margin(l = 28, r = -45)),  # -40 aligns with 1890
+    axis.text.x = element_text(colour = "white",
+                               # vjust = -1,
+                               margin = margin(t = -20, b = 10))
+  )
+
+ggsave("./try1.png",
+       dpi = 330,
+       units = "cm", 
+       width = 17, height = 24 # A4 format 21 x 29.7
+       
+       )
+
+# Add text and arrows following THIS AMAZING blog: http://jenrichmond.rbind.io/post/idhtg-how-to-annotate-plots/#:~:text=Add%20text%20to%20a%20ggplot,want%20the%20label%20to%20say.&text=To%20add%20arrows%2C%20first%20make,line%20to%20start%20and%20stop.
+# Use {ggannotate} to add arrows and text with a Shiny interface that generates the code for you !!
+
+# Text:
+# " Average right-key letter content is relatively stable for 100 years (1880 - 1980)
+#  and then shows a steady increase from 199o which seems to stabilize after 2010 (data available until 2017)."
+#  
+# Add TAG of text label:
+# "1980: < 3 % ...
+# "1990: about 16% of American households have a computer" arrow to 1990 
+# "2010: > 76.7 %"
+# "2017: >90% ... "
+# "US Census Bureau’s Current Population Survey (CPS) and American Community Survey (ACS)"
+
+
+# https://www.census.gov/data/tables/2012/demo/computer-internet/computer-use-2012.html for data on households with computer
+
+
+# To Try's:
+# - plot mean with sd ribbon
+# - plot median and mean
+# - calculate average before 1990 and after 1990
+# - plot average before/after 1990 on plot ... ?
+# - find cool font
+# - find nice viz arrangement: plot without margin??
+# 
+# 
+
+
+
+
+# Plot: Dominance 1 (B as left) -------------------------------------------
 
 # Right- vs none- vs Left-dominated names (no sex distinction)
 
@@ -161,6 +268,9 @@ babynames_rl %>%
   )
   # See an increase from the 1990s but still left dominated (also, left has more keys ... )
  
+
+# Plot: Dominance 2 (B as right) -------------------------------------------
+
 # B as right
 babynames_rl %>% 
   group_by(year, predominance2) %>%
@@ -179,13 +289,15 @@ babynames_rl %>%
 
 
 
+# Plot: Dominance 1 (B as left) by sex -------------------------------------------
+
 # Right- vs none- vs Left-dominated names, by sex 
 babynames_rl %>% 
-  group_by(year, sex, predominance) %>%
+  group_by(year, sex, predominance1) %>%
   summarise(n = n()) %>%
   # summarise(n = length(predominance)) %>% # same as n()
   # view() %>% 
-  ggplot(., aes(x = year, y = n, fill = predominance)) +
+  ggplot(., aes(x = year, y = n, fill = predominance1)) +
   ggstream::geom_stream(
     # type = "mirror"
     type = "proportional" # "ridge" "proportional" "mirror"
@@ -198,14 +310,19 @@ babynames_rl %>%
   # effect is more pronounced for Female names
 
 
+# Plot: how many distinct names per sex ---------------------------------
+
 # Now just plot the "diversity" of names by sex (how many unique names per sex?)
 babynames %>% 
   group_by(year, sex) %>% 
   summarise(unique_names = n_distinct(name)) %>% 
-  view() %>% 
+  # view() %>% 
   ggplot(., aes(x = year, y = unique_names)) +
   geom_line(aes(color = sex))
   # there are more different female names than male names
+
+
+# Plot: percentage of girls and boy borns per year ---------------------------
 
 # Are there more female or male?
 babynames %>% 
@@ -220,7 +337,7 @@ babynames %>%
     type = "proportional", # "ridge" "proportional" "mirror"
     bw = 0
   ) +
-  geom_hline(yintercept = 0.5)
+  geom_hline(yintercept = 0.5, color = "white")
  # so many more baby girls than boys in the 1800! Why??
  # and why more males since the 1940???
 
@@ -242,13 +359,14 @@ babynames %>%
   # filter()
 
 
-# Try with different keyboard (B on right instead of left)
-# How important is key "B" (how many names contain at least 1 B?)
-babynames_rl %>% 
-  filter(str_detect(name, "b")) %>% 
-  view()
+# # Try with different keyboard (B on right instead of left)
+# # How important is key "B" (how many names contain at least 1 B?)
+# babynames_rl %>% 
+#   filter(str_detect(name, "b")) %>% 
+#   view()
   
 
+# Plot: right vs left key letter count by year, B and no B -----------------------------
 
 # Now count total of right hand key letters per year
 babynames_rl %>% 
@@ -275,34 +393,38 @@ babynames_rl %>%
  # still similar pattern as before
 
 
-# Now plot average percentage of right key letters in names (per year)
 
-babynames_rl_long <- babynames_rl %>%
-  group_by(year) %>% 
-  summarise(perc_r1_mean = mean(perc_right1),
-            perc_r1_median = median(perc_right1),
-            perc_r1_sd = sd(perc_right1),
-            perc_r2_mean = mean(perc_right2),
-            perc_r2_median = median(perc_right2),
-            perc_r2_sd = sd(perc_right2)) %>% 
-  pivot_longer(
-    cols = -year,
-    values_to = "value",
-    names_to = "summary_stat"
-  ) %>% 
-  mutate(method = str_extract(summary_stat, "[:digit:]")) 
-
-
-babynames_rl %>%
-  group_by(year) %>% 
-  summarise(perc_r1 = mean(perc_right1),
-            perc_r2 = mean(perc_right2)) %>% 
-  ggplot(., aes(x = year, y = perc_r2)) +
-  geom_area(fill = "#0A3161") +
-  geom_line(color = "red", size = 1) +
-  # scale_y_continuous(limits = c(0, 100))
-  # scale_y_continuous(limits = c(40, 60)) +
-  coord_cartesian(ylim = c(43, 53)) # sensationalist plot
+# # Plot: mean % of right vs left key letters in baby names -----------------------------
+# 
+# # Now plot average percentage of right key letters in names (per year)
+# 
+# babynames_rl_long <- babynames_rl %>%
+#   group_by(year) %>% 
+#   summarise(method1_mean = mean(perc_right1),
+#             method1_median = median(perc_right1),
+#             method1_sd = sd(perc_right1),
+#             method2_mean = mean(perc_right2),
+#             method2_median = median(perc_right2),
+#             method2_sd = sd(perc_right2)) %>% 
+#   pivot_longer(
+#     cols = -year,
+#     values_to = "value",
+#     names_to = "percent_summary_stat"
+#   ) %>% 
+#   mutate(method = str_extract(percent_summary_stat, "[:digit:]")) %>% 
+#   mutate(percent_stat = str_extract(percent_summary_stat, "[:alpha:]{1,6}$"))
+# 
+# 
+# babynames_rl %>%
+#   group_by(year) %>% 
+#   summarise(perc_r1 = mean(perc_right1),
+#             perc_r2 = mean(perc_right2)) %>% 
+#   ggplot(., aes(x = year, y = perc_r2)) +
+#   geom_area(fill = "#0A3161") +
+#   geom_line(color = "red", size = 1) +
+#   # scale_y_continuous(limits = c(0, 100))
+#   # scale_y_continuous(limits = c(40, 60)) +
+#   coord_cartesian(ylim = c(43, 53)) # sensationalist plot
 
 
 
