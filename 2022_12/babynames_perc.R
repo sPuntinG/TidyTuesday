@@ -121,32 +121,27 @@ babynames_rl <- left_join(babynames, tibble_all, by = "name")
 
 
 
-# Plot: mean % of right vs left key letters in baby names -----------------------------
+# Plot: weighted mean % of right vs left key letters in baby names -----------------------------
 
 # Now plot average percentage of right key letters in names (per year)
+# NOTE: old version was not normalized for the frequency of the names! 
+#       perc_right should be multiplied by n and then averaged (divided by total n)
 
-babynames_rl_long <- babynames_rl %>%
+
+# New version with normalization by n
+babynames_rl %>% 
+  # filter(year > 1980) %>%
   group_by(year) %>% 
-  summarise(method1_mean = mean(perc_right1),
-            method1_median = median(perc_right1),
-            method1_sd = sd(perc_right1),
-            method2_mean = mean(perc_right2),
-            method2_median = median(perc_right2),
-            method2_sd = sd(perc_right2)) %>% 
-  pivot_longer(
-    cols = -year,
-    values_to = "value",
-    names_to = "percent_summary_stat"
+  mutate(n_tot = sum(n)) %>% 
+  ungroup() %>% 
+  mutate(
+    perc_right1_n = perc_right1 * n
   ) %>% 
-  mutate(method = str_extract(percent_summary_stat, "[:digit:]")) %>% 
-  mutate(percent_stat = str_extract(percent_summary_stat, "[:alpha:]{1,6}$"))
-
-
-plot <- babynames_rl %>%
-  group_by(year) %>% 
-  summarise(perc_r1 = mean(perc_right1),
-            perc_r2 = mean(perc_right2)) %>% 
-  ggplot(., aes(x = year, y = perc_r2)) +
+  group_by(year) %>%
+  reframe(perc_right1_n_mean = sum(perc_right1_n) / n_tot) %>% 
+  unique() %>% 
+  # view() %>% 
+  ggplot(., aes(x = year, y = perc_right1_n_mean)) +
   geom_area(fill = "#B31942") +
   geom_line(color = "white", linewidth = 1) +
   scale_y_continuous(expand = c(0,0), 
@@ -154,18 +149,9 @@ plot <- babynames_rl %>%
                      labels = function(x) paste0(x, " %")) + 
   scale_x_continuous(expand = c(0,0),
                      breaks = seq(1890, 2010, 20)) +
-  # scale_y_continuous(limits = c(0, 100))
-  coord_cartesian(ylim = c(35, 70)) 
-  # scale_y_continuous(limits = c(40, 60)) +
-  # coord_cartesian(ylim = c(43, 53)) # sensationalist plot
-  # labs(
-  #     title = "The QWERTY effect on USA babynames?",
-  #   subtitle = "Percentage of baby names dominated by right-hand keys (red) and left-hand keys (blue) per year of birth"
-  # )
+  coord_cartesian(ylim = c(35, 70)) -> plot1
 
-plot
-
-plot +
+plot1 + 
   geom_hline(yintercept = c(40, 45, 50, 55), color = "white", linetype = "dashed", alpha = 0.3) +
   # geom_vline(xintercept = 1990, color = "white", linetype = "solid") +
   annotate("text", 
@@ -199,7 +185,84 @@ plot +
                                margin = margin(t = -20, b = 10))
   )
 
-ggsave("./try1.png",
+  
+
+
+# babynames_rl_long <- babynames_rl %>%
+#   group_by(year) %>% 
+#   summarise(method1_mean = mean(perc_right1),
+#             method1_median = median(perc_right1),
+#             method1_sd = sd(perc_right1),
+#             method2_mean = mean(perc_right2),
+#             method2_median = median(perc_right2),
+#             method2_sd = sd(perc_right2)) %>% 
+#   pivot_longer(
+#     cols = -year,
+#     values_to = "value",
+#     names_to = "percent_summary_stat"
+#   ) %>% 
+#   mutate(method = str_extract(percent_summary_stat, "[:digit:]")) %>% 
+#   mutate(percent_stat = str_extract(percent_summary_stat, "[:alpha:]{1,6}$"))
+# 
+# 
+# plot <- babynames_rl %>%
+#   group_by(year) %>% 
+#   summarise(perc_r1 = mean(perc_right1),
+#             perc_r2 = mean(perc_right2)) %>% 
+#   ggplot(., aes(x = year, y = perc_r2)) +
+#   geom_area(fill = "#B31942") +
+#   geom_line(color = "white", linewidth = 1) +
+#   scale_y_continuous(expand = c(0,0), 
+#                      breaks = c(40, 50),
+#                      labels = function(x) paste0(x, " %")) + 
+#   scale_x_continuous(expand = c(0,0),
+#                      breaks = seq(1890, 2010, 20)) +
+#   # scale_y_continuous(limits = c(0, 100))
+#   coord_cartesian(ylim = c(35, 70)) 
+#   # scale_y_continuous(limits = c(40, 60)) +
+#   # coord_cartesian(ylim = c(43, 53)) # sensationalist plot
+#   # labs(
+#   #     title = "The QWERTY effect on USA babynames?",
+#   #   subtitle = "Percentage of baby names dominated by right-hand keys (red) and left-hand keys (blue) per year of birth"
+#   # )
+# 
+# plot
+
+# plot +
+  # geom_hline(yintercept = c(40, 45, 50, 55), color = "white", linetype = "dashed", alpha = 0.3) +
+  # # geom_vline(xintercept = 1990, color = "white", linetype = "solid") +
+  # annotate("text", 
+  #          x = 1890, y = 68, 
+  #          hjust = 0,
+  #          color = "white",
+  #          size = 3,
+  #          label = "The QWERTY effect: does technology influence how Americans chose baby names?") +
+  # annotate("text", 
+  #          x = 1890, y = 65, 
+  #          hjust = 0,
+  #          color = "white",
+  #          size = 2,
+  #          label = "Percentage of baby names dominated by right-hand keys (red) and left-hand keys (blue) per year of birth") +
+  # theme(
+  #   plot.title = element_text(vjust = -20, hjust = 0, colour = "white"),
+  #   plot.subtitle = element_text(vjust = -20, hjust = 0, colour = "white"),
+  #   panel.background = element_rect(fill = "#0A3161", color = NA),
+  #   plot.margin = margin(rep(1, 4)),
+  #   # plot.background = element_blank(), # element_rect(fill = color_bg, color = NA)
+  #   panel.grid.major = element_blank(), #element_line(colour = "#C8EFE4", size = 0.1), # linetype = "dashed",
+  #   panel.grid.minor = element_blank(),
+  #   axis.ticks = element_blank(),
+  #   axis.title = element_blank(),
+  #   # axis.text.y = element_text(margin = margin(l = -40)) # colour = "white", 
+  #   axis.text.y = element_text(colour = "white",
+  #                              vjust = -1,
+  #                              margin = margin(l = 28, r = -45)),  # -40 aligns with 1890
+  #   axis.text.x = element_text(colour = "white",
+  #                              # vjust = -1,
+  #                              margin = margin(t = -20, b = 10))
+  # )
+
+ggsave("./try2.png",
        dpi = 330,
        units = "cm", 
        width = 17, height = 24 # A4 format 21 x 29.7
