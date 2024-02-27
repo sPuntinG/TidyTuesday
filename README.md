@@ -10,6 +10,10 @@ I take this as an opportunity to play around with different types of data and pl
   
 ![EU27_energy](2023_23/EU27EnergySourcePC.png)
 
+- 2022_12 👶 The "QWERTY effect" on American baby names. 📦{ggtext}
+
+![babynames](2022_12/USbabynames.png)
+
 - 2018_36 🍃 Invasive species in Africa. 📦{patchwork} (🥉 RBZS Data Viz challenge 2021)
 
 ![africa_species](https://user-images.githubusercontent.com/88721301/138603459-bdd609da-9f9a-489a-8bcc-fc834656d1be.png)
