@@ -4,6 +4,8 @@
 
 library(tidyverse)
 library(here)
+library(ggtext) # for element_markdown() and geom_textbox()
+library(extrafont) # for custom fonts. note: {showtext} is supposedly better: allowed mixed fonts in same textbox but messed font sizez in ggplot)
 
 
 # tuesdata <- tidytuesdayR::tt_load(2022, week = 12)
@@ -20,7 +22,7 @@ babynames$name %>% n_distinct() # 97'310 (!!!)
 names10 <- babynames$name %>% unique() %>% .[1:10] # small set for now as it's a huge data set ... !
 
 
-# Count right key letters in each name ---------------------------------
+# Count right-key letters in each name ---------------------------------
 
 # Make function to iterate
 count_right <- function(x) {
@@ -39,6 +41,7 @@ count_right("mario") # 3
 
 
 # Apply to full list of names 
+# (this is a lot less comp. intensive than mutate() in full data set ... !)
 
 all_names <- babynames$name %>% unique()
 
@@ -69,25 +72,24 @@ babynames_rl <- left_join(babynames, tibble_all, by = "name")
 
 
 
-
-# Fonts OLD ------------------
+# Fonts: import & use new fonts ------------------
 windowsFonts()
 
 # install.packages("extrafont")
-library(extrafont)
+# library(extrafont)
 # font_import() # to run only when new fonts added to the system?
-loadfonts(device = "win")
+extrafont::loadfonts(device = "win")
 
 extrafont::fonttable() %>% view()
 
 windowsFonts()
 
 
-# Plot: weighted mean % of right vs left key letters in baby names -----------------------------
+# Plot: calculate weighted mean % of right vs left key letters in baby names -----------------------------
 
-# Plot average percentage of right key letters in names (per year)
+# As in the average percentage of right key letters in names (per year)
 
-# New version with normalization by n
+# with normalization by n (names frequency)
 babynames_rl_toplot <- babynames_rl %>% 
   # filter(year > 1980) %>%
   group_by(year) %>% 
@@ -96,7 +98,6 @@ babynames_rl_toplot <- babynames_rl %>%
   mutate(
     perc_right_n = perc_right * n
   ) %>% 
-  # select(year, n, n_tot, perc_right1, perc_right1_n) %>% #view() name, 
   group_by(year) %>%
   reframe(perc_right_n_mean = sum(perc_right_n) / n_tot) %>% #view()
   unique()
@@ -104,34 +105,30 @@ babynames_rl_toplot <- babynames_rl %>%
 
 
 
-# Add image
+## 0: Import keyboard image ---------------------------
 img <- png::readPNG("qwertyLR.png")
 raster <- grid::rasterGrob(img, interpolate = TRUE)
 
 
-library(ggtext) # for element_markdown() and geom_textbox()
 
-# Main plot
+
+## 1: Main plot --------------------------------------
 p1 <- ggplot(babynames_rl_toplot, aes(x = year, y = perc_right_n_mean)) +
   geom_hline(yintercept = c(45, 50), color = "white", linewidth = 1.25) +
-  # geom_hline(yintercept =  seq(35, 47, 1), color = "white", linewidth = 0.7) +
-  # geom_hline(yintercept =  seq(47, 51, 1), color = "white", linewidth = 0.3) +
   geom_hline(yintercept =  seq(44, 53, 1), color = "white", alpha = 0.9,
-             linewidth = seq(1, 0.1, -0.1)) + # linewidth = seq(0.9, 0, -0.1)
+             linewidth = seq(1, 0.1, -0.1)) + 
   geom_area(fill = "#B31942") +
   geom_line(color = "white", linewidth = 1) +
-  # geom_hline(yintercept = 40, color = "white") + # c(40, 45, 50, 55) linetype = "dashed",  , alpha = 0.3
   scale_y_continuous(expand = c(0,0), 
                      breaks = c(45, 50),
                      labels = function(x) paste0(x, " %")) + 
   scale_x_continuous(expand = c(0,0),
                      breaks = seq(1890, 2010, 20)) +
-  coord_cartesian(ylim = c(38, 70)) + # coord_cartesian(ylim = c(40, 55)) + coord_cartesian(ylim = c(40, 70)) +
+  coord_cartesian(ylim = c(38, 70)) + 
   theme(
     text = element_text(colour = "white", family = "Poppins"),
     plot.background = element_rect(fill = "#0A3161", color = NA),
     panel.background = element_rect(fill = "#0A3161", color = NA),
-    # plot.margin = margin(t = 5, r = 0, b = 0, l = 0, unit = "cm"), #margin(rep(1, 4)),
     panel.grid.major = element_blank(), 
     panel.grid.minor = element_blank(),
     axis.ticks = element_blank(),
@@ -145,7 +142,7 @@ p1 <- ggplot(babynames_rl_toplot, aes(x = year, y = perc_right_n_mean)) +
 p1
 
 
-# Add textbox for description
+## 2: Add textbox for description ------------------------------
 
 left_align <- 1885
 
@@ -157,18 +154,15 @@ text_caption <- tibble(
 
 text_title <- tibble(
   year = c(left_align),
-  y = c(64.5), # c(67.5),
+  y = c(64.5), 
   text = c(
-    # "American <span style='font-family:Gloria Hallelujah'>baby names</span> and the <span style='font-family:Special Elite'>QWERTY effect</span>:<br> is tech steering naming preferences?"
-    "<span style='font-size:18pt'>American baby names and the QWERTY effect:<br> is tech steering naming preferences?</span><br><br>
-    "
-    # "American <span style='font-family:gloria_halleluja'>baby names</span> and the <span style='font-family:special_elite'>QWERTY effect</span>: is tech steering naming preferences?"
-    )
+    "<span style='font-size:18pt'>American baby names and the QWERTY effect:<br> is tech steering naming preferences?</span><br><br>"
+  )
 )
 
 text_descr <- tibble(
   year = c(left_align),
-  y = c(59), # 62 59.5
+  y = c(59), 
   text = c(
     "The **‘QWERTY effect’** describes a phenomenon where words containing more letters from the right side of the keyboard are perceived more positively (Jasmin and Casasanto 2012).<br><br> 
     This influence seems to extend to the selection of baby names in the U.S., with names rich in right key letters gaining popularity since the 1990s, coinciding with the widespread adoption of QWERTY keyboards as computers and the internet became household staples (Casasanto et al. 2014).<br><br>
@@ -181,7 +175,7 @@ Essentially, the plotted line (%) goes up as names containing a higher percentag
 
 
 p1 +
-  annotation_custom(raster, x = 1965, xmax = 2010, y = 67, ymax = 69) + # x = 1950, xmax = 2010, y = 69, ymax = 66
+  annotation_custom(raster, x = 1965, xmax = 2010, y = 67, ymax = 69) + 
   ggtext::geom_textbox(
     data = text_caption,
     mapping = aes(x = year,
@@ -205,10 +199,10 @@ p1 +
     hjust = 0,
     size = 5,
     width = unit(15, "cm"),
-    family = "Special Elite", # family = "Poppins", # works     # family = "Gloria Hallelujah", # works
+    family = "Special Elite", 
     fill = NA,
     box.color = NA,
-    color = "white" # text color
+    color = "white" 
   ) +
   ggtext::geom_textbox(
     data = text_descr,
@@ -219,7 +213,7 @@ p1 +
     hjust = 0,
     size = 4,
     width = unit(15, "cm"),
-    family = "Poppins", # works
+    family = "Poppins", 
     fill = NA,
     box.color = NA,
     color = "white" # text color
@@ -234,7 +228,6 @@ p1 +
             color = "white",
             width = unit(9, "cm"),
             valign = 1,
-            # hjust = 0.5,
             inherit.aes = FALSE) +
   geom_curve(data = data.frame(x = 1980, y = 42.5160724790146, xend = 1990, yend = 44.2951979644509),
              mapping = aes(x = x, y = y, xend = xend, yend = yend),
@@ -244,9 +237,9 @@ p1 +
              inherit.aes = FALSE)
 
 
-# Print png file
+# Print png file -----------------------------------------------
 ggsave("./USbabynames.png",
        dpi = 330,
        units = "cm", 
-       width = 17, height = 24 # A4 format 21 x 29.7
+       width = 17, height = 24 # A4 format is 21 x 29.7
 )
