@@ -12,7 +12,9 @@ I take this as an opportunity to play around with different types of data and pl
 
 - 2022_12 👶 The "QWERTY effect" on American baby names. 📦{ggtext}
 
-![babynames](2022_12/USbabynames.png)
+<div style="text-align: center;">
+  <img src="2022_12/USbabynames.png" alt="babynames" style="width: 35vw; margin: 0 auto;">
+</div>
 
 - 2018_36 🍃 Invasive species in Africa. 📦{patchwork} (🥉 RBZS Data Viz challenge 2021)
 
