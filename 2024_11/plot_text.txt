@@ -1,0 +1,22 @@
+
+# Title
+Fiscal Sponsorship Opportunities in Education
+
+# Subtitle
+A fiscal sponsor is a nonprofit organization that teams up with community projects lacking tax-exempt status, managing their funds to support charitable endeavors while ensuring compliance with tax laws. This arrangement allows donors to make tax-deductible contributions to the project through the fiscal sponsor.
+
+The R4DS Online Learning community is curretnly seeking a new fiscal sponsor. 
+To aid in the search, let's have a look at organizations that sponsor projects in the field of EDUCATION.
+
+# 1 WAFFLE!
+What's the pool of possible FS?
+There are currently 368 FS, of which the majority, XXX sponsor projects in EDUCATION
+
+# 2 HIST N SPONSORED
+Are there major players?
+Most FS sponsor a small number of projects. Indeed, half of them has sponsorer less than 12[Edo] or 11.5[other] projects so far (median).
+However, there are some very big outliers, with a few individuals FS having sponsored 100s of projects.
+
+# 3 SCATTER:
+Age is relative: do older organizations sponsor more projects? Not necessarily
+[geom_textbox highlight highest nr and oldest but not necessarily most succesfull]
