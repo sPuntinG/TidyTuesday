@@ -6,6 +6,9 @@ My contributions to `#TidyTuesday`.
 
 I take this as an opportunity to play around with different types of data and plots, and practice with a new 📦package every time.<br>
 
+- 2024_11 🎓 Fiscal Sponsors in Education. 📦{waffle}
+![FS_Education](https://github.com/sPuntinG/TidyTuesday/blob/master/2024_11/Fiscal_Sponsors_combo.png)
+
 - 2023_23 ⚡ Evolution of per capita energy consumption in Europe. 📦{ggstream}
   
 ![EU27_energy](2023_23/EU27EnergySourcePC.png)
