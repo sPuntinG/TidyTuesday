@@ -7,6 +7,7 @@ My contributions to `#TidyTuesday`.
 I take this as an opportunity to play around with different types of data and plots, and practice with a new 📦package every time.<br>
 
 - 2024_11 🎓 Fiscal Sponsors in Education. 📦{waffle}
+  
 ![FS_Education](https://github.com/sPuntinG/TidyTuesday/blob/master/2024_11/Fiscal_Sponsors_combo.png)
 
 - 2023_23 ⚡ Evolution of per capita energy consumption in Europe. 📦{ggstream}
@@ -16,7 +17,7 @@ I take this as an opportunity to play around with different types of data and pl
 - 2022_12 👶 The "QWERTY effect" on American baby names. 📦{ggtext}
 
 <div style="text-align: center;">
-  <img src="2022_12/USbabynames.png" alt="babynames" style="width: 35vw; margin: 0 auto;">
+  <img src="2022_12/USbabynames.png" alt="babynames" style="width: 30vw; margin: 0 auto;">
 </div>
 
 - 2018_36 🍃 Invasive species in Africa. 📦{patchwork} (🥉 RBZS Data Viz challenge 2021)
