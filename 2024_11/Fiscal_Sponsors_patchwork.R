@@ -100,6 +100,7 @@ waffle <- ggplot(data_waffle,
                      values = n)) +
   geom_waffle(make_proportional = F,
               flip = T,
+              color = lavagna,
               n_rows = 15,
               size = 0.5) + 
   scale_fill_manual(values = palette_FS) +
@@ -321,7 +322,7 @@ scatter
 
 
 # Patchwork -------------------------------
-# library(patchwork)
+library(patchwork)
 
 # Manually define areas
 layout <- '
